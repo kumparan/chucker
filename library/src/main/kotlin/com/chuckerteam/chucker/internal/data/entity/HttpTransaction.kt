@@ -169,6 +169,10 @@ internal class HttpTransaction(
             .find { it.name.lowercase().contains("operation-name") }?.value
     }
 
+    fun setGraphQlOperationNameString(name: String) {
+        graphQlOperationName = name
+    }
+
     fun getParsedRequestHeaders(): List<HttpHeader>? {
         return JsonConverter.instance.fromJson<List<HttpHeader>>(
             requestHeaders,
