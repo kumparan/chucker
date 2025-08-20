@@ -5,6 +5,8 @@ import com.chuckerteam.chucker.R
 import com.chuckerteam.chucker.api.BodyDecoder
 import com.chuckerteam.chucker.api.ChuckerCollector
 import com.chuckerteam.chucker.internal.data.entity.HttpTransaction
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import okhttp3.Request
 import okio.Buffer
 import okio.ByteString
@@ -35,6 +37,35 @@ internal class RequestProcessor(
             request.headers.redact(headersToRedact).let {
                 setRequestHeaders(it)
                 setGraphQlOperationName(it)
+                if (request.method == "GET") {
+                    request.url.queryParameter("operationName")?.let { name ->
+                        setGraphQlOperationNameString(name)
+                    }
+                } else {
+                    request.body?.let {body ->
+                        val gson = Gson()
+                        val buffer = Buffer()
+                        body.writeTo(buffer)
+                        val bodyString = buffer.readUtf8()
+                        if (bodyString.startsWith("[")) {
+                            gson.fromJson<List<Map<String, Any>>>(
+                                bodyString,
+                                List::class.java
+                            ).let {list ->
+                                val name = list.map { v -> v["operationName"] }.joinToString() //(separator = "\n") { "- $it" }
+                                setGraphQlOperationNameString(name)
+                            }
+                        }
+                        if (bodyString.startsWith("{")){
+                            setGraphQlOperationNameString(
+                                gson.fromJson<Map<String, Any>>(
+                                    bodyString,
+                                    object : TypeToken<Map<String, Any>>() {}.type
+                                )["operationName"].toString()
+                            )
+                        }
+                    }
+                }
             }
             populateUrl(request.url)
             graphQlDetected = isGraphQLRequest(this.graphQlOperationName, request)

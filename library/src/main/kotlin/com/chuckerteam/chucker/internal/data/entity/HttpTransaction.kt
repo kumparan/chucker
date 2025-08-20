@@ -176,6 +176,10 @@ internal class HttpTransaction(
             requestHeaders,
             TypeToken.getParameterized(List::class.java, HttpHeader::class.java).type,
         )
+    
+    fun setGraphQlOperationNameString(name: String) {
+        graphQlOperationName = name
+    }
 
     fun getParsedResponseHeaders(): List<HttpHeader>? =
         JsonConverter.instance.fromJson<List<HttpHeader>>(
